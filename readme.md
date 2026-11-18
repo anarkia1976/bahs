@@ -10,7 +10,7 @@ Il progetto è suddiviso in due componenti principali:
 4. **`04_BAHS_split-original.py`** : script relativo allo split del video della partita nelle corrispettive clips derivate dai timestamps
 5. **`05_BAHS_merge-clips.py `** : script di merge delle varie clips canestro con effetto di transizione fade in/out
 6. **`06_BAHS_add-music-overlay.py`** : script che si occupa di aggiungere lo strato musicale mantenendo audio originale in sottofondo
-7. **`07_BAHS_text-overlay.py`** : script dedicato alla sovraimpressione dinamica del campionato e delle squadre presenti nelle riprese
+7. **`07_BAHS_add-text-overlay.py`** : script dedicato alla sovraimpressione dinamica del campionato e delle squadre presenti nelle riprese
 
 Gli script devono avere le seguenti caratteristiche di base:
 1. **pulizia console (clear)** : ad avvio script puliza della console di elaborazione
@@ -31,7 +31,7 @@ Gli script devono avere le seguenti caratteristiche di base:
 ├── 📄 04_BAHS_split-original.py       	# Motore di estrazione clips da video originale
 ├── 📄 05_BAHS_merge-clips.py     		# Motore dedicato al merge delle clips con effetti di transizione
 ├── 📄 06_BAHS_add-music-overlay.py    	# Motore di inserimento musica ed effetti
-├── 📄 07_BAHS_text-overlay.py		   	# Motore text overlay a video
+├── 📄 07_BAHS_add-text-overlay.py		   	# Motore text overlay a video
 ├── 📄 readme.md		        		# Readme progetto BAHS
 ├── 📄 requirements.txt         		# Dipendenze e pacchetti necessari
 │

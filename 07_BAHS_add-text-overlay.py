@@ -6,7 +6,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-SCRIPT_NAME = "07_BAHS_text-overlay.py"
+SCRIPT_NAME = "07_BAHS_add-text-overlay.py"
 INPUT_DIR = "FINAL"
 DEFAULT_INPUT_VIDEO = os.path.join(INPUT_DIR, "video_finale_merged_music.mp4")
 OUTPUT_FILE = os.path.join(INPUT_DIR, "video_finale_merged_music_text.mp4")
@@ -24,7 +24,7 @@ def setup_logging():
     """Configura il sistema di logging nella cartella LOG."""
     setup_directories()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_filename = os.path.join(LOG_DIR, f"07_BAHS_text-overlay_{timestamp}.log")
+    log_filename = os.path.join(LOG_DIR, f"07_BAHS_add-text-overlay_{timestamp}.log")
     
     logging.basicConfig(
         filename=log_filename,
