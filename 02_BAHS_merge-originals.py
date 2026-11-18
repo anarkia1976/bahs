@@ -51,16 +51,16 @@ def configura_logging():
     logging.info(f"Sistema di log inizializzato. File salvato in: {percorso_file_log}")
 
 def stampa_intestazione():
-    print("=" * 70)
+    print("=" * 76)
     print(f" INIZIO ELABORAZIONE - SCRIPT: {NOME_SCRIPT}")
     print(f" [Hardware Rilevato] Thread logici: {TOTAL_THREADS} | Worker max: {MAX_WORKERS} | Thread/Worker: {THREADS_PER_WORKER}")
-    print("=" * 70)
+    print("=" * 76)
 
 def stampa_chiusura(successo=True):
-    print("=" * 70)
+    print("=" * 76)
     stato = "PROCESSO COMPLETATO CON SUCCESSO" if successo else "PROCESSO TERMINATO CON ERRORI"
     print(f" FINE ELABORAZIONE [{NOME_SCRIPT}] - {stato}")
-    print("=" * 70)
+    print("=" * 76)
 
 def mostra_barra_avanzamento(iterabile, descrizione="Elaborazione"):
     if tqdm is not None:
