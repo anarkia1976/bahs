@@ -177,7 +177,7 @@ def mostra_menu_principale(ultima_scelta=None):
     larghezza_testo = 60
 
     print("\n" + "=" * 70)
-    print(" 🏀 BASKET AUTOMATION HIGHLISGHTS SUITE (BHAS) - MENU PRINCIPALE")
+    print(" 🏀 BASKETBALL AUTOMATION HIGHLIGHTS SUITE (BAHS) - MENU PRINCIPALE")
     print("=" * 70)
     
     print("")
