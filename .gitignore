@@ -218,6 +218,11 @@ tempCodeRunnerFile.py
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-
-# Streamlit
 .streamlit/secrets.toml
+
+# Cartelle di output e di lavoro del progetto BasketHighlights
+FINAL/
+IN/
+OUT/
+TMP/
+LOG/# Streamlit

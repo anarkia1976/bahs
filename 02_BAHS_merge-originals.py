@@ -3,22 +3,33 @@ import logging
 from datetime import datetime
 import subprocess
 
-# Tentativo di importare tqdm per una barra di avanzamento grafica professionale
 try:
     from tqdm import tqdm
 except ImportError:
     tqdm = None
 
-# Nome dello script di riferimento
 NOME_SCRIPT = "02_BAHS_merge-originals"
 
+# ==========================================
+# CONFIGURAZIONE DINAMICA DELLA CPU
+# ==========================================
+def calcola_parametri_cpu():
+    total_threads = os.cpu_count() or 4
+    physical_cores = max(2, total_threads // 2)
+    if total_threads <= 4:
+        max_workers, threads_per_worker = 2, max(1, total_threads // 2)
+    elif total_threads <= 8:
+        max_workers, threads_per_worker = 4, 2
+    else:
+        max_workers, threads_per_worker = physical_cores, 4
+    return total_threads, max_workers, threads_per_worker
+
+TOTAL_THREADS, MAX_WORKERS, THREADS_PER_WORKER = calcola_parametri_cpu()
+
 def pulisci_schermo():
-    """1. Pulisce la console di elaborazione all'avvio."""
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def configura_logging():
-    """4. Configura il logging con data e ora salvato nella cartella LOG,
-    iniziando con il nome dello script."""
     cartella_log = "LOG"
     os.makedirs(cartella_log, exist_ok=True)
     timestamp_file = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -28,7 +39,6 @@ def configura_logging():
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    # Evita la duplicazione degli handler se la funzione viene richiamata più volte
     if not logger.handlers:
         handler_console = logging.StreamHandler()
         handler_console.setFormatter(formato_log)
@@ -41,31 +51,26 @@ def configura_logging():
     logging.info(f"Sistema di log inizializzato. File salvato in: {percorso_file_log}")
 
 def stampa_intestazione():
-    """2. Stampa in modo chiaro l'INIZIO con il nome dello script."""
-    print("=" * 65)
+    print("=" * 70)
     print(f" INIZIO ELABORAZIONE - SCRIPT: {NOME_SCRIPT}")
-    print("=" * 65)
+    print(f" [Hardware Rilevato] Thread logici: {TOTAL_THREADS} | Worker max: {MAX_WORKERS} | Thread/Worker: {THREADS_PER_WORKER}")
+    print("=" * 70)
 
 def stampa_chiusura(successo=True):
-    """2. Stampa in modo chiaro la FINE con il nome dello script e l'esito."""
-    print("=" * 65)
+    print("=" * 70)
     stato = "PROCESSO COMPLETATO CON SUCCESSO" if successo else "PROCESSO TERMINATO CON ERRORI"
     print(f" FINE ELABORAZIONE [{NOME_SCRIPT}] - {stato}")
-    print("=" * 65)
+    print("=" * 70)
 
 def mostra_barra_avanzamento(iterabile, descrizione="Elaborazione"):
-    """3. Gestisce la barra di avanzamento dello stato di elaborazione."""
     if tqdm is not None:
         return tqdm(iterabile, desc=descrizione, ncols=65, ascii=" #")
     else:
-        # Fallback nel caso in cui la libreria tqdm non sia installata
         print(f"[{descrizione}] In corso...")
         return iterabile
 
 def rimuovi_file_temporanei(cartelle_da_controllare, file_lista_temp="filelist.txt"):
-    """Rimuove i file temporanei e la cartella TMP se vuota."""
     logging.info("Pulizia dei file temporanei residui...")
-    
     if os.path.exists(file_lista_temp):
         try:
             os.remove(file_lista_temp)
@@ -88,13 +93,8 @@ def rimuovi_file_temporanei(cartelle_da_controllare, file_lista_temp="filelist.t
                 pass
 
 def unisci_video_ffmpeg(cartella_input="IN", cartella_output="OUT", cartella_tmp="TMP", nome_file_output="video_finale.mp4"):
-    # 1. Pulizia console iniziale
     pulisci_schermo()
-    
-    # 2. Intestazione con nome script
     stampa_intestazione()
-    
-    # 4. Avvio logging
     configura_logging()
     
     successo_processo = True
@@ -125,7 +125,6 @@ def unisci_video_ffmpeg(cartella_input="IN", cartella_output="OUT", cartella_tmp
 
         logging.info(f"Trovati {len(file_video)} video da unire in sequenza.")
         
-        # 3. Barra di avanzamento per la scansione e scrittura della lista file
         with open(file_lista_temp, "w", encoding="utf-8") as f:
             for file in mostra_barra_avanzamento(file_video, descrizione="Scansione Video"):
                 percorso_completo = os.path.abspath(os.path.join(cartella_input, file))
@@ -144,7 +143,6 @@ def unisci_video_ffmpeg(cartella_input="IN", cartella_output="OUT", cartella_tmp
             percorso_output
         ]
 
-        # Esecuzione del processo FFmpeg
         processo = subprocess.run(comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         if processo.returncode != 0:
@@ -158,10 +156,7 @@ def unisci_video_ffmpeg(cartella_input="IN", cartella_output="OUT", cartella_tmp
         successo_processo = False
         
     finally:
-        # Pulizia file temporanei
         rimuovi_file_temporanei([cartella_tmp], file_lista_temp)
-        
-        # 2. Chiusura ufficiale come ultima operazione
         stampa_chiusura(successo=successo_processo)
 
 if __name__ == "__main__":
