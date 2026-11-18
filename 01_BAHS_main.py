@@ -9,7 +9,7 @@ try:
 except ImportError:
     tqdm = None
 
-SCRIPT_NAME = "01_BHAS_main"
+SCRIPT_NAME = "01_BAHS_main"
 
 # Elenco di tutte le cartelle standard utilizzate dai vari moduli della suite
 REQUIRED_DIRECTORIES = ["IN", "OUT", "FINAL", "TMP", "LOG", "MUSIC", "EXTRA"]
@@ -177,7 +177,7 @@ def mostra_menu_principale(ultima_scelta=None):
     larghezza_testo = 60
 
     print("\n" + "=" * 70)
-    print(" 🏀 BASKET HIGHLIGHTS AUTOMATION SYSTEM (BHAS) - MENU PRINCIPALE")
+    print(" 🏀 BASKET AUTOMATION HIGHLISGHTS SUITE (BHAS) - MENU PRINCIPALE")
     print("=" * 70)
     
     print("")

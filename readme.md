@@ -1,10 +1,10 @@
-# 🏀 BAHS - Basketball Highlights Automation Suite
+# 🏀 BAHS - Basketball Automation Highlights Suite
 
 Una suite modulare ad alta precisione, **manual-first**, progettata per la creazione di video highlight di pallacanestro. 
 Il sistema unisce il controllo umano totale (per un'accuratezza del 100% rispetto ai falsi positivi dell'IA) all'automazione spinta delle fasi di estrazione video e montaggio tramite **FFmpeg**.
 
 Il progetto è suddiviso in due componenti principali:
-1. **`01_BHAS_main.py`** : script di governo della suite
+1. **`01_BAHS_main.py`** : script di governo della suite
 2. **`02_BAHS_merge-originals.py`** : script che si occupa di unire eventuali video frammentati ma facenti parte dello stesso match
 3. **`03_BAHS_identify-timestamps.py`** : script per il salvataggio del timestamp canestro, salvato nella cartella **IN** nel file **timestamp.txt**
 4. **`04_BAHS_split-original.py`** : script relativo allo split del video della partita nelle corrispettive clips derivate dai timestamps
@@ -25,13 +25,13 @@ Gli script devono avere le seguenti caratteristiche di base:
 ```text
 📁 BAHS/
 │
-├── 📄 01_BHAS_main.py      			# Script generale per la gestione delle varie fasi di elaborazione
+├── 📄 01_BAHS_main.py      			# Script generale per la gestione delle varie fasi di elaborazione
 ├── 📄 02_BAHS_merge-originals.py      	# Motore di unione automatica di eventuali video frammentati
 ├── 📄 03_BAHS_identify-timestamps.py	# Player interattivo per la registrazione dei canestri (timestamps)
 ├── 📄 04_BAHS_split-original.py       	# Motore di estrazione clips da video originale
 ├── 📄 05_BAHS_merge-clips.py     		# Motore dedicato al merge delle clips con effetti di transizione
 ├── 📄 06_BAHS_add-music-overlay.py    	# Motore di inserimento musica ed effetti
-├── 📄 07_BAHS_add-text-overlay.py		   	# Motore text overlay a video
+├── 📄 07_BAHS_add-text-overlay.py		# Motore text overlay a video
 ├── 📄 readme.md		        		# Readme progetto BAHS
 ├── 📄 requirements.txt         		# Dipendenze e pacchetti necessari
 │
