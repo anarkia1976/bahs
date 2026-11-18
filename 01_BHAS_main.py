@@ -14,6 +14,12 @@ SCRIPT_NAME = "01_BHAS_main"
 # Elenco di tutte le cartelle standard utilizzate dai vari moduli della suite
 REQUIRED_DIRECTORIES = ["IN", "OUT", "FINAL", "TMP", "LOG", "MUSIC", "EXTRA"]
 
+# Cartelle soggette a pulizia automatica con l'opzione 0
+CLEANUP_DIRECTORIES = ["FINAL", "OUT", "TMP"]
+
+# Estensioni video supportate dai controlli
+SUPPORTED_VIDEO_EXTS = ('.mp4', '.mov', '.avi', '.mkv', '.m4v', '.webm')
+
 # ==========================================
 # CONFIGURAZIONE DINAMICA DELLA CPU
 # ==========================================
@@ -35,12 +41,15 @@ def pulisci_schermo():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def setup_logging():
-    """Configura la cartella LOG e il file di log associato alla sessione."""
+    """Configura la cartella LOG e il file di log associato alla sessione (creato solo su richiesta di elaborazione)."""
     log_dir = "LOG"
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     log_filename = os.path.join(log_dir, f"{SCRIPT_NAME}_{timestamp}.log")
     
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+
     logging.basicConfig(
         filename=log_filename,
         level=logging.INFO,
@@ -76,113 +85,176 @@ def setup_directories():
         if not os.path.exists(directory):
             try:
                 os.makedirs(directory)
-                logging.info(f"Cartella creata: '{directory}'")
             except Exception as e:
-                logging.error(f"Impossibile creare la cartella '{directory}': {e}")
-        else:
-            logging.info(f"Cartella già esistente: '{directory}'")
-    print("   [✔] Controllo e configurazione cartelle completato.")
+                print(f"   [X] Errore creazione cartella '{directory}': {e}")
 
 def check_input_videos():
-    """Verifica la presenza di file .mp4 nella cartella IN e suggerisce di inserirli se assenti."""
+    """Verifica la presenza di file video supportati nella cartella IN e suggerisce di inserirli se assenti."""
     print("\n[Fase 2] Controllo presenza file video nella cartella 'IN'...")
     in_dir = "IN"
     
-    # Abilita i codici ANSI su Windows se necessario
     if os.name == 'nt':
         os.system('')
         
     if os.path.exists(in_dir):
-        mp4_files = [f for f in os.listdir(in_dir) if f.lower().endswith('.mp4')]
-        if not mp4_files:
-            # Codici ANSI: \033[1m (Grassetto), \033[5m (Lampeggiante), \033[91m (Rosso acceso), \033[0m (Reset)
-            messaggio_lampeggiante = "\033[1m\033[5m\033[91m[!] Attenzione: Nessun file '.mp4' trovato nella cartella 'IN'.\033[0m"
-            
+        video_files = [f for f in os.listdir(in_dir) if f.lower().endswith(SUPPORTED_VIDEO_EXTS)]
+        if not video_files:
+            messaggio_lampeggiante = f"\033[1m\033[5m\033[91m[!] Attenzione: Nessun file video valido ({', '.join(SUPPORTED_VIDEO_EXTS)}) trovato nella cartella 'IN'.\033[0m"
             print(f"   {messaggio_lampeggiante}")
-            print("   💡 SUGGERIMENTO: Inserisci i file video MP4 nella cartella 'IN' prima di avviare le attività di elaborazione.")
-            logging.warning("Cartella 'IN' vuota: nessun file MP4 trovato.")
+            print(f"   💡 SUGGERIMENTO: Inserisci i file video (es. .mp4, .mov, ecc.) nella cartella 'IN' prima di avviare le attività.")
         else:
-            print(f"   [✔] Trovati {len(mp4_files)} file video MP4 nella cartella 'IN'.")
-            logging.info(f"Trovati {len(mp4_files)} file MP4 in 'IN'.")
+            print(f"   [✔] Trovati {len(video_files)} file video supportati nella cartella 'IN'.")
     else:
         print("   [!] Cartella 'IN' non trovata.")
-        logging.error("Cartella 'IN' inesistente.")
 
 def check_ffmpeg():
     """Verifica disponibilità di FFmpeg e FFprobe nel sistema."""
     print("\n[Fase 3] Verifica disponibilità di FFmpeg e FFprobe nel sistema...")
     if shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None:
         print("   [!] Attenzione: FFmpeg o FFprobe non sono installati o non sono presenti nel PATH.")
-        logging.warning("FFmpeg o FFprobe non trovati nel PATH di sistema.")
         return False
     else:
         print("   [✔] FFmpeg e FFprobe rilevati correttamente.")
-        logging.info("FFmpeg e FFprobe verificati con successo.")
         return True
 
-def mostra_menu_principale():
+def pulisci_cartelle_lavoro():
+    """Svuota e pulisce in automatico le cartelle di elaborazione (FINAL, OUT, TMP e log vecchi)."""
+    print("\n🧹 Avvio pulizia automatica delle cartelle di lavoro...")
+    
+    for directory in CLEANUP_DIRECTORIES:
+        if os.path.exists(directory):
+            try:
+                for item in os.listdir(directory):
+                    item_path = os.path.join(directory, item)
+                    if os.path.isfile(item_path) or os.path.islink(item_path):
+                        os.unlink(item_path)
+                    elif os.path.isdir(item_path):
+                        shutil.rmtree(item_path)
+                print(f"   [✔] Cartella pulita con successo: '{directory}'")
+            except Exception as e:
+                print(f"   [X] Errore durante la pulizia della cartella '{directory}': {e}")
+        else:
+            os.makedirs(directory, exist_ok=True)
+            print(f"   [+] Cartella ricreata (perché inesistente): '{directory}'")
+
+    log_dir = "LOG"
+    if os.path.exists(log_dir):
+        try:
+            for item in os.listdir(log_dir):
+                item_path = os.path.join(log_dir, item)
+                try:
+                    if os.path.isfile(item_path):
+                        os.unlink(item_path)
+                except Exception:
+                    pass
+            print(f"   [✔] Cartella log pulita (file attivi esclusi): '{log_dir}'")
+        except Exception as e:
+            print(f"   [X] Errore pulizia cartella '{log_dir}': {e}")
+
+    print("✨ Pulizia completata con successo!\n")
+    input("Premi [INVIO] per tornare al menu principale... ")
+
+def mostra_menu_principale(ultima_scelta=None):
+    """Mostra il menu con opzioni allineate e l'ultima eseguita evidenziata in verde lampeggiante."""
+    if os.name == 'nt':
+        os.system('')
+
+    verde_lamp = "\033[1m\033[5m\033[92m"
+    ciano = "\033[96m"
+    giallo = "\033[93m"
+    reset = "\033[0m"
+
+    voci = [
+        ("1", "Avvia unione video originali (02_BAHS_merge-originals.py)"),
+        ("2", "Identifica timestamp dei canestri (03_BAHS_identify-timestamps.py)"),
+        ("3", "Taglia e separa le clip dei canestri (04_BAHS_split-original.py)"),
+        ("4", "Unisci le clip dei canestri con transizioni (05_BAHS_merge-clips.py)"),
+        ("5", "Aggiungi sottofondo musicale (06_BAHS_add-music-overlay.py)"),
+        ("6", "Aggiungi sovraimpressione testo/titoli (07_BAHS_add-text-overlay.py)")
+    ]
+
+    # Lunghezza fissa per garantire l'allineamento perfetto delle descrizioni
+    larghezza_testo = 60
+
     print("\n" + "=" * 70)
     print(" 🏀 BASKET HIGHLIGHTS AUTOMATION SYSTEM (BHAS) - MENU PRINCIPALE")
     print("=" * 70)
-    print(" 1. Avvia unione video originali (02_BAHS_merge-originals.py)")
-    print(" 2. Identifica timestamp dei canestri (03_BAHS_identify-timestamps.py)")
-    print(" 3. Taglia e separa le clip dei canestri (04_BAHS_split-original.py)")
-    print(" 4. Unisci le clip dei canestri con transizioni (05_BAHS_merge-clips.py)")
-    print(" 5. Aggiungi sottofondo musicale (06_BAHS_add-music-overlay.py)")
-    print(" 6. Aggiungi sovraimpressione testo/titoli (07_BAHS_add-text-overlay.py)")
-    print(" 0. Esci")
+    
+    print("")
+    print(f" {ciano}0. Vuoi eseguire pulizia delle cartelle (FINAL, OUT, LOG, TMP){reset}")
+    print("")
+    
+    for num, descrizione in voci:
+        testo_voce = f"{num}. {descrizione}".ljust(larghezza_testo)
+        if ultima_scelta == num:
+            print(f" {verde_lamp}{testo_voce} [ULTIMA ESEGUITA]{reset}")
+        else:
+            print(f" {testo_voce}")
+            
+    print("")
+    print(f" {giallo}99. Esci{reset}")
+    print("")
     print("=" * 70)
 
 def main():
-    pulisci_schermo()           # 1. Pulizia console (clear) ad avvio script
-    stampa_intestazione()       # 2. Console con intestazione chiara e nome script
-    log_file = setup_logging()  # 4. Logging con data e ora salvati nella cartella LOG con nome script
+    pulisci_schermo()           
+    stampa_intestazione()       
     
-    logging.info(f"INIZIO script principale {SCRIPT_NAME} (Thread CPU: {TOTAL_THREADS})")
     successo_processo = True
+    ultima_scelta_eseguita = None
+    log_file = None
 
     try:
-        # 3. Barra di avanzamento per le cartelle + controlli iniziali
         setup_directories()
-        check_input_videos()    # Controllo file mp4 in IN con avviso lampeggiante e suggerimento
+        check_input_videos()    
         check_ffmpeg()
 
-        # Interfaccia di lancio rapido degli altri script
         while True:
-            mostra_menu_principale()
-            scelta = input("\n👉 Seleziona un'opzione (0-6): ").strip()
+            mostra_menu_principale(ultima_scelta=ultima_scelta_eseguita)
+            scelta = input("\n👉 Seleziona un'opzione (0-6 o 99): ").strip()
 
-            if scelta == "1":
-                print("\n🚀 Avvio di 02_BAHS_merge-originals.py...")
-                os.system(f"{sys.executable} 02_BAHS_merge-originals.py")
-            elif scelta == "2":
-                print("\n🚀 Avvio di 03_BAHS_identify-timestamps.py...")
-                os.system(f"{sys.executable} 03_BAHS_identify-timestamps.py")
-            elif scelta == "3":
-                print("\n🚀 Avvio di 04_BAHS_split-original.py...")
-                os.system(f"{sys.executable} 04_BAHS_split-original.py")
-            elif scelta == "4":
-                print("\n🚀 Avvio di 05_BAHS_merge-clips.py...")
-                os.system(f"{sys.executable} 05_BAHS_merge-clips.py")
-            elif scelta == "5":
-                print("\n🚀 Avvio di 06_BAHS_add-music-overlay.py...")
-                os.system(f"{sys.executable} 06_BAHS_add-music-overlay.py")
-            elif scelta == "6":
-                print("\n🚀 Avvio di 07_BAHS_add-text-overlay.py...")
-                os.system(f"{sys.executable} 07_BAHS_add-text-overlay.py")
-            elif scelta == "0":
+            if scelta == "0":
+                pulisci_cartelle_lavoro()
+                ultima_scelta_eseguita = None
+            elif scelta in ["1", "2", "3", "4", "5", "6"]:
+                if not log_file:
+                    log_file = setup_logging()
+                    logging.info(f"INIZIO script principale {SCRIPT_NAME} (Thread CPU: {TOTAL_THREADS})")
+
+                script_mapping = {
+                    "1": "02_BAHS_merge-originals.py",
+                    "2": "03_BAHS_identify-timestamps.py",
+                    "3": "04_BAHS_split-original.py",
+                    "4": "05_BAHS_merge-clips.py",
+                    "5": "06_BAHS_add-music-overlay.py",
+                    "6": "07_BAHS_add-text-overlay.py"
+                }
+                nome_script_target = script_mapping[scelta]
+                print(f"\n🚀 Avvio di {nome_script_target}...")
+                logging.info(f"Lancio sottoscript: {nome_script_target}")
+                
+                os.system(f"{sys.executable} {nome_script_target}")
+                ultima_scelta_eseguita = scelta
+                
+            elif scelta == "99":
                 print("\n👋 Chiusura del programma di controllo. Arrivederci!")
-                logging.info("Chiusura manuale del sistema da parte dell'utente.")
+                if log_file:
+                    logging.info("Chiusura manuale del sistema da parte dell'utente.")
                 break
             else:
-                print("\n[!] Scelta non valida. Inserisci un numero compreso tra 0 e 6.")
+                print("\n[!] Scelta non valida. Inserisci un'opzione corretta dal menu.")
 
     except Exception as e:
-        logging.exception(f"Errore critico nello script principale: {e}")
+        if log_file:
+            logging.exception(f"Errore critico nello script principale: {e}")
+        else:
+            print(f"\n[X] Errore critico: {e}")
         successo_processo = False
     finally:
-        stampa_chiusura(successo=successo_processo) # 2. Chiusura elaborazione stampata in modo chiaro
-        print(f" Report salvato in: {log_file}")
+        if log_file:
+            print(f"\n Report salvato in: {log_file}")
+            logging.info(f"FINE script principale {SCRIPT_NAME}")
+        stampa_chiusura(successo=successo_processo) 
 
 if __name__ == "__main__":
     main()

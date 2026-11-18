@@ -180,6 +180,21 @@ def record_timestamps():
         base_delay = int(1000 / fps)
         delay = max(1, int(base_delay / speed))
         
+        # --- FIX: Mostra subito il fotogramma e forza il focus sulla finestra ---
+        display_frame = current_frame.copy()
+        display_frame = draw_overlay(display_frame, 0.0, total_sec, speed, paused, recorded_times, flash_timer, session_label)
+        cv2.imshow(window_title, display_frame)
+        cv2.waitKey(1)
+        
+        if os.name == 'nt':
+            try:
+                hwnd = ctypes.windll.user32.FindWindowW(None, window_title)
+                if hwnd:
+                    ctypes.windll.user32.SetForegroundWindow(hwnd)
+            except Exception:
+                pass
+        # ----------------------------------------------------------------------
+        
         while cap.isOpened():
             if not paused:
                 ret, frame = cap.read()
