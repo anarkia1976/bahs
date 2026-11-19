@@ -8,7 +8,7 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Nome dello script di riferimento dinamico
-NOME_SCRIPT = "04_BAHS_split-original-DynamicCPU"
+NOME_SCRIPT = "04_BAHS_split-original"
 
 
 # ==========================================
@@ -88,18 +88,18 @@ def setup_logging():
 
 def stampa_intestazione():
     """Stampa in modo chiaro l'INIZIO con il nome dello script e l'hardware rilevato."""
-    print("=" * 70)
+    print("=" * 76)
     print(f" INIZIO ELABORAZIONE - {NOME_SCRIPT}")
     print(f" [Hardware Rilevato] Thread logici: {TOTAL_THREADS} | Worker: {MAX_WORKERS} | Thread/Worker: {THREADS_PER_WORKER}")
-    print("=" * 70)
+    print("=" * 76)
 
 
 def stampa_chiusura(successo=True):
     """Stampa in modo chiaro la FINE con il nome dello script e l'esito."""
-    print("=" * 70)
+    print("=" * 76)
     stato = "PROCESSO COMPLETATO CON SUCCESSO" if successo else "PROCESSO TERMINATO CON ERRORI"
     print(f" FINE ELABORAZIONE [{NOME_SCRIPT}] - {stato}")
-    print("=" * 70)
+    print("=" * 76)
 
 
 def check_ffmpeg():
@@ -448,7 +448,6 @@ def interactive_process():
 
     finally:
         stampa_chiusura(successo=successo_processo)
-
 
 if __name__ == "__main__":
     interactive_process()
