@@ -92,10 +92,12 @@ def stampa_intestazione():
     print(f" INIZIO ELABORAZIONE - {NOME_SCRIPT}")
     print(f" [Hardware Rilevato] Thread logici: {TOTAL_THREADS} | Worker: {MAX_WORKERS} | Thread/Worker: {THREADS_PER_WORKER}")
     print("=" * 76)
+    print()
 
 
 def stampa_chiusura(successo=True):
     """Stampa in modo chiaro la FINE con il nome dello script e l'esito."""
+    print()
     print("=" * 76)
     stato = "PROCESSO COMPLETATO CON SUCCESSO" if successo else "PROCESSO TERMINATO CON ERRORI"
     print(f" FINE ELABORAZIONE [{NOME_SCRIPT}] - {stato}")
@@ -415,7 +417,7 @@ def interactive_process():
                 )
                 futures[future] = t
 
-            with tqdm(total=len(basket_times), desc="Taglio Parallelo Dinamico", ascii=" #") as pbar:
+            with tqdm(total=len(basket_times), desc="Taglio Parallelo Dinamico", unit="clip", colour="blue") as pbar:
                 pbar.set_postfix({"ok": 0, "err": 0})
                 for future in as_completed(futures):
                     t_completed = futures[future]

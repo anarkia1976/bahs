@@ -29,6 +29,23 @@ def calcola_parametri_cpu():
 
 TOTAL_THREADS, MAX_WORKERS, THREADS_PER_WORKER = calcola_parametri_cpu()
 
+
+class TqdmLoggingHandler(logging.Handler):
+    """Invia i log su console tramite tqdm.write per non sovrapporsi alla barra."""
+    def __init__(self, level=logging.NOTSET):
+        super().__init__(level)
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            if tqdm is not None:
+                tqdm.write(msg)
+            else:
+                print(msg)
+        except Exception:
+            self.handleError(record)
+
+
 def pulisci_schermo():
     os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -45,7 +62,7 @@ def configura_logging():
     if logger.hasHandlers():
         logger.handlers.clear()
 
-    handler_console = logging.StreamHandler()
+    handler_console = TqdmLoggingHandler()
     handler_console.setFormatter(formato_log)
     logger.addHandler(handler_console)
 
@@ -56,16 +73,18 @@ def configura_logging():
     logging.info(f"Sistema di log inizializzato. File salvato in: {percorso_file_log}")
 
 def stampa_intestazione():
-    print("=" * 70)
+    print("=" * 80)
     print(f" INIZIO ELABORAZIONE - SCRIPT: {NOME_SCRIPT}")
     print(f" [Hardware Rilevato] Thread logici: {TOTAL_THREADS} | Worker max: {MAX_WORKERS} | Thread/Worker: {THREADS_PER_WORKER}")
-    print("=" * 70)
+    print("=" * 80)
+    print()
 
 def stampa_chiusura(successo=True):
-    print("=" * 70)
+    print()
+    print("=" * 80)
     stato = "PROCESSO COMPLETATO CON SUCCESSO" if successo else "PROCESSO TERMINATO CON ERRORI"
     print(f" FINE ELABORAZIONE [{NOME_SCRIPT}] - {stato}")
-    print("=" * 70)
+    print("=" * 80)
 
 def seconds_to_time_str(seconds):
     mins = int(seconds // 60)
@@ -154,7 +173,7 @@ def record_timestamps():
         fps = cap.get(cv2.CAP_PROP_FPS)
         if fps <= 0: fps = 25.0
             
-        total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         total_sec = total_frames / fps if fps > 0 else 0
             
         txt_path = dir_in / "timestamps.txt"
@@ -194,30 +213,48 @@ def record_timestamps():
             except Exception:
                 pass
         # ----------------------------------------------------------------------
-        
-        while cap.isOpened():
-            if not paused:
-                ret, frame = cap.read()
-                if not ret: break
-                current_frame = frame
-            
-            current_msec = cap.get(cv2.CAP_PROP_POS_MSEC)
-            current_sec = current_msec / 1000.0
-            
-            display_frame = current_frame.copy()
-            display_frame = draw_overlay(display_frame, current_sec, total_sec, speed, paused, recorded_times, flash_timer, session_label)
-            cv2.imshow(window_title, display_frame)
-            
-            key = cv2.waitKey(delay if not paused else 30) & 0xFF
-            if key in (ord('q'), ord('Q')): break
-            elif key in (ord('p'), ord('P')): paused = not paused
-            elif key in (ord('f'), ord('F')): cap.set(cv2.CAP_PROP_POS_MSEC, current_msec + 5000)
-            elif key in (ord('r'), ord('R')): cap.set(cv2.CAP_PROP_POS_MSEC, max(0, current_msec - 5000))
-            elif key == 32:
-                time_str = seconds_to_time_str(current_sec)
-                if time_str not in recorded_times:
-                    recorded_times.append(time_str)
-                    flash_timer = time.time() + 0.6
+
+        pbar = None
+        if tqdm is not None and total_frames > 0:
+            pbar = tqdm(total=total_frames, desc="Analisi Video", unit="frame", colour="blue")
+
+        try:
+            while cap.isOpened():
+                if not paused:
+                    ret, frame = cap.read()
+                    if not ret: break
+                    current_frame = frame
+                
+                current_msec = cap.get(cv2.CAP_PROP_POS_MSEC)
+                current_sec = current_msec / 1000.0
+
+                if pbar is not None:
+                    current_pos = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
+                    if current_pos > pbar.n:
+                        pbar.update(min(total_frames - pbar.n, current_pos - pbar.n))
+                    elif current_pos < pbar.n:
+                        pbar.n = max(0, min(total_frames, current_pos))
+                        pbar.refresh()
+                
+                display_frame = current_frame.copy()
+                display_frame = draw_overlay(display_frame, current_sec, total_sec, speed, paused, recorded_times, flash_timer, session_label)
+                cv2.imshow(window_title, display_frame)
+                
+                key = cv2.waitKey(delay if not paused else 30) & 0xFF
+                if key in (ord('q'), ord('Q')): break
+                elif key in (ord('p'), ord('P')): paused = not paused
+                elif key in (ord('f'), ord('F')): cap.set(cv2.CAP_PROP_POS_MSEC, current_msec + 5000)
+                elif key in (ord('r'), ord('R')): cap.set(cv2.CAP_PROP_POS_MSEC, max(0, current_msec - 5000))
+                elif key == 32:
+                    time_str = seconds_to_time_str(current_sec)
+                    if time_str not in recorded_times:
+                        recorded_times.append(time_str)
+                        flash_timer = time.time() + 0.6
+                        if pbar is not None:
+                            pbar.set_postfix({"canestri": len(recorded_times)})
+        finally:
+            if pbar is not None:
+                pbar.close()
                 
         cap.release()
         cv2.destroyAllWindows()

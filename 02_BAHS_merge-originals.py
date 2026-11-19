@@ -51,20 +51,22 @@ def configura_logging():
     logging.info(f"Sistema di log inizializzato. File salvato in: {percorso_file_log}")
 
 def stampa_intestazione():
-    print("=" * 76)
+    print("=" * 80)
     print(f" INIZIO ELABORAZIONE - SCRIPT: {NOME_SCRIPT}")
     print(f" [Hardware Rilevato] Thread logici: {TOTAL_THREADS} | Worker max: {MAX_WORKERS} | Thread/Worker: {THREADS_PER_WORKER}")
-    print("=" * 76)
+    print("=" * 80)
+    print()
 
 def stampa_chiusura(successo=True):
-    print("=" * 76)
+    print()
+    print("=" * 80)
     stato = "PROCESSO COMPLETATO CON SUCCESSO" if successo else "PROCESSO TERMINATO CON ERRORI"
     print(f" FINE ELABORAZIONE [{NOME_SCRIPT}] - {stato}")
-    print("=" * 76)
+    print("=" * 80)
 
-def mostra_barra_avanzamento(iterabile, descrizione="Elaborazione"):
+def mostra_barra_avanzamento(iterabile, descrizione="Elaborazione", colore="blue", unita="file"):
     if tqdm is not None:
-        return tqdm(iterabile, desc=descrizione, ncols=65, ascii=" #")
+        return tqdm(iterabile, desc=descrizione, unit=unita, colour=colore)
     else:
         print(f"[{descrizione}] In corso...")
         return iterabile
@@ -126,7 +128,7 @@ def unisci_video_ffmpeg(cartella_input="IN", cartella_output="OUT", cartella_tmp
         logging.info(f"Trovati {len(file_video)} video da unire in sequenza.")
         
         with open(file_lista_temp, "w", encoding="utf-8") as f:
-            for file in mostra_barra_avanzamento(file_video, descrizione="Scansione Video"):
+            for file in mostra_barra_avanzamento(file_video, descrizione="Scansione Video", colore="blue", unita="file"):
                 percorso_completo = os.path.abspath(os.path.join(cartella_input, file))
                 f.write(f"file '{percorso_completo.replace(os.sep, '/')}'\n")
                 logging.info(f" - Aggiunto alla sequenza: {file}")
@@ -143,7 +145,12 @@ def unisci_video_ffmpeg(cartella_input="IN", cartella_output="OUT", cartella_tmp
             percorso_output
         ]
 
-        processo = subprocess.run(comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if tqdm is not None:
+            with tqdm(total=1, desc="Unione FFmpeg", unit="video", colour="green") as pbar_ffmpeg:
+                processo = subprocess.run(comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                pbar_ffmpeg.update(1)
+        else:
+            processo = subprocess.run(comando, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         if processo.returncode != 0:
             logging.error(f"Errore durante l'esecuzione di FFmpeg:\n{processo.stderr}")

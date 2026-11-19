@@ -6,7 +6,7 @@ import shutil
 from datetime import datetime
 from tqdm import tqdm
 
-SCRIPT_NAME = "05_BAHS_merge-clips.py"
+SCRIPT_NAME = "05_BAHS_merge-clips"
 INPUT_DIR = "OUT"
 OUTPUT_DIR = "FINAL"
 TMP_DIR = "TMP"
@@ -109,12 +109,12 @@ def main():
     clear_console()
     log_file = setup_logging()
     
-    print("=" * 70)
+    print("=" * 80)
     print(f" INIZIO ELABORAZIONE (Fade In/Out + Transizioni): {SCRIPT_NAME}")
     print(f" [Hardware Rilevato] Thread logici: {TOTAL_THREADS} | Worker: {MAX_WORKERS} | Thread/Worker: {THREADS_PER_WORKER}")
     print(f" Input: '{INPUT_DIR}' | Output: '{OUTPUT_DIR}' | Durata Fade: {FADE_DURATION}s")
     print(f" Data e ora: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("=" * 70)
+    print("=" * 80)
     
     logging.info(f"INIZIO elaborazione script {SCRIPT_NAME} (Modalità Fade In/Out Completo - Thread CPU: {TOTAL_THREADS})")
     check_ffmpeg()
@@ -213,10 +213,10 @@ def main():
     finally:
         cleanup_tmp()
 
-    print("\n" + "=" * 70)
+    print("\n" + "=" * 80)
     print(f" FINE ELABORAZIONE: {SCRIPT_NAME}")
     print(f" Report salvato in: {log_file}")
-    print("=" * 70)
+    print("=" * 80)
 
 if __name__ == "__main__":
     main()
